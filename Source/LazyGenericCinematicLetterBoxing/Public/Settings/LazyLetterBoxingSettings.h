@@ -17,7 +17,7 @@ class LAZYGENERICCINEMATICLETTERBOXING_API ULazyLetterBoxingSettings : public UD
 public:
 	ULazyLetterBoxingSettings(const FObjectInitializer& ObjectInitializer);
 
-	UPROPERTY(config, EditAnywhere, Category = "Letter Boxing", meta = (AllowedClasses = "Material"))
+	UPROPERTY(config, EditAnywhere, Category = "Letter Boxing", meta = (AllowedClasses = "/Script/Engine.Material"))
 	FSoftObjectPath LetterBoxMaterialPath;
 
 	UPROPERTY(config, EditAnywhere, Category = "Letter Boxing", meta = (ClampMin = "0.0", ClampMax = "1.0"))

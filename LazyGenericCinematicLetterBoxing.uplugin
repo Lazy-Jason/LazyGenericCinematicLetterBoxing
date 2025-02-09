@@ -2,11 +2,11 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "Lazy Generic Cinematic Letterboxing",
+	"FriendlyName": "LazyGenericCinematicLetterBoxing",
 	"Description": "A versatile plugin for adding and managing cinematic letterboxing effects in Unreal Engine projects. Features include smooth transitions, aspect ratio presets, and runtime control for immersive cinematics and gameplay sequences.",
 	"Category": "LazyGenerics",
 	"CreatedBy": "Job Omondiale",
-	"CreatedByURL": "https://github.com/jasonG006",
+	"CreatedByURL": "https://github.com/Lazy-Jason",
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
@@ -14,7 +14,7 @@
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,
 	"Installed": false,
-	"EngineVersion": "5.1.0",
+	"EngineVersion": "5.4.0",
 	"Modules": [
 		{
 			"Name": "LazyGenericCinematicLetterBoxing",

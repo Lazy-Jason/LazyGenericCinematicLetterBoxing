@@ -1,14 +1,17 @@
 // Copyright (C) 2024 Job Omondiale - All Rights Reserved
 
 #include "SubSystem/LazyLetterBoxingSubsystem.h"
+#include "Settings/LazyLetterBoxingSettings.h"
+#include "TimerManager.h"
 #include "Engine/PostProcessVolume.h"
 #include "Kismet/GameplayStatics.h"
-#include "Settings/LazyLetterBoxingSettings.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/World.h"
 
 void ULazyLetterBoxingSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
-    InitializeLetterBoxMaterial();
+    /*InitializeLetterBoxMaterial();*/
 }
 
 void ULazyLetterBoxingSubsystem::Deinitialize()
@@ -16,20 +19,49 @@ void ULazyLetterBoxingSubsystem::Deinitialize()
     Super::Deinitialize();
 }
 
+void ULazyLetterBoxingSubsystem::InitializeLetterBoxMaterial()
+{
+    const ULazyLetterBoxingSettings* Settings = GetDefault<ULazyLetterBoxingSettings>();
+    if (Settings == nullptr) return;
+
+    TickRate = Settings->TickRate;
+    UMaterialInterface* BaseMaterial = Cast<UMaterialInterface>(Settings->LetterBoxMaterialPath.TryLoad());
+    if (BaseMaterial == nullptr) return;
+    
+    LetterBoxMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+    if (LetterBoxMaterial == nullptr) return;
+    
+    ApplyPostProcessMaterial();
+}
+
+void ULazyLetterBoxingSubsystem::ApplyPostProcessMaterial()
+{
+    if (LetterBoxMaterial == nullptr) return;
+
+    const UWorld* World = GetWorld();
+    if (World == nullptr) return;
+
+    APostProcessVolume* PostProcessVolume = Cast<APostProcessVolume>(UGameplayStatics::GetActorOfClass(World, APostProcessVolume::StaticClass()));
+    if (PostProcessVolume == nullptr) return;
+
+    LetterBoxMaterial->SetScalarParameterValue(FName("AspectRatio"), 0);
+    PostProcessVolume->AddOrUpdateBlendable(LetterBoxMaterial);
+}
+
 void ULazyLetterBoxingSubsystem::OpenCinematicLetterBoxing(const float TransitionTime, const float AspectRatio)
 {
-    if (bIsLetterBoxEnabled && AspectRatio == TargetAspectRatio) return; // return if already active
+    if (bIsLetterBoxEnabled && AspectRatio == TargetAspectRatio || LetterBoxMaterial == nullptr) return;
     
     const ULazyLetterBoxingSettings* Settings = GetDefault<ULazyLetterBoxingSettings>();
-    if (!IsValid(Settings)) return; // return if not valid
-    
+    if (Settings == nullptr) return;
+
     const UWorld* World = GetWorld();
-    if (!IsValid(World)) return; // return if not valid
+    if (World == nullptr) return;
+
     bIsLetterBoxEnabled = true;
     TargetAspectRatio = AspectRatio > 0 ? AspectRatio : Settings->DefaultTargetAspectRatio;
 
-    // if the transition is 0 instantaneously set the aspect ratio
-    if(TransitionTime == 0) 
+    if (TransitionTime == 0) 
     {
         LetterBoxMaterial->SetScalarParameterValue(FName("AspectRatio"), TargetAspectRatio);
         return;
@@ -43,12 +75,14 @@ void ULazyLetterBoxingSubsystem::OpenCinematicLetterBoxing(const float Transitio
 
 void ULazyLetterBoxingSubsystem::CloseCinematicLetterBoxing(const float TransitionTime)
 {
+    if (LetterBoxMaterial == nullptr) return;
+
     const UWorld* World = GetWorld();
-    if (!IsValid(World)) return; // return if not valid
+    if (World == nullptr) return;
+
     bIsLetterBoxEnabled = false;
 
-    // if the transition is 0 instantaneously set the aspect ratio
-    if(TransitionTime == 0)
+    if (TransitionTime == 0)
     {
         LetterBoxMaterial->SetScalarParameterValue(FName("AspectRatio"), 0);
         return;
@@ -60,37 +94,12 @@ void ULazyLetterBoxingSubsystem::CloseCinematicLetterBoxing(const float Transiti
     World->GetTimerManager().SetTimer(TickTimerHandle, this, &ULazyLetterBoxingSubsystem::UpdateLetterBoxing, TickRate, true);
 }
 
-void ULazyLetterBoxingSubsystem::InitializeLetterBoxMaterial()
-{
-    const ULazyLetterBoxingSettings* Settings = GetDefault<ULazyLetterBoxingSettings>();
-    if (!IsValid(Settings)) return; // return if not valid
-
-    TickRate = Settings->TickRate;
-    UMaterial* BaseMaterial = Cast<UMaterial>(Settings->LetterBoxMaterialPath.TryLoad());
-    if (!IsValid(BaseMaterial)) return; // return if not valid
-    
-    LetterBoxMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this);
-    ApplyPostProcessMaterial();
-}
-
-void ULazyLetterBoxingSubsystem::ApplyPostProcessMaterial()
-{
-    if (!IsValid(LetterBoxMaterial)) return;
-
-    const UWorld* World = GetWorld();
-    if (!IsValid(World)) return; // return if not valid
-
-    APostProcessVolume* PostProcessVolume = Cast<APostProcessVolume>(UGameplayStatics::GetActorOfClass(World, APostProcessVolume::StaticClass()));
-    if (!IsValid(PostProcessVolume)) return; // return if not valid
-
-    PostProcessVolume->AddOrUpdateBlendable(LetterBoxMaterial);
-}
-
 void ULazyLetterBoxingSubsystem::UpdateLetterBoxing()
 {
-    if (!IsValid(LetterBoxMaterial)) return; // return if not valid
-    
-    const float DeltaTime = GetWorld() ? GetWorld()->GetDeltaSeconds() : TickRate;
+    if (LetterBoxMaterial == nullptr) return;
+
+    const UWorld* World = GetWorld();
+    const float DeltaTime = World ? World->GetDeltaSeconds() : TickRate;
     
     TransitionProgress += DeltaTime / TransitionDuration;
     TransitionProgress = FMath::Clamp(TransitionProgress, 0.0f, 1.0f);
@@ -107,7 +116,7 @@ void ULazyLetterBoxingSubsystem::UpdateLetterBoxing()
 void ULazyLetterBoxingSubsystem::ResetCinematicLetteringUpdates()
 {
     const UWorld* World = GetWorld();
-    if (!IsValid(World)) return; // return if not valid
+    if (World == nullptr) return;
 
     TransitionDuration = 0.0f;
     TransitionProgress = 0.0f;

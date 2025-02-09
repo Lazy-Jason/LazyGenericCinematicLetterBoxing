@@ -7,5 +7,5 @@ ULazyLetterBoxingSettings::ULazyLetterBoxingSettings(const FObjectInitializer& O
 : Super(ObjectInitializer)
 {
 	CategoryName = TEXT("Plugins");
-	LetterBoxMaterialPath = FSoftObjectPath(TEXT("/Game/PostProcess/M_Letterbox"));
+	LetterBoxMaterialPath = FSoftObjectPath(TEXT("/LazyGenericCinematicLetterBoxing/Material/M_CinematicLetterBox.M_CinematicLetterBox"));
 }
